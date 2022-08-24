@@ -3,10 +3,6 @@
 
 import argparse
 import os
-import sys
-import time
-import scipy.io
-import numpy as np
 
 import torch
 import dataset
@@ -14,8 +10,6 @@ from vae import MultiVAE
 from dae import MultiDAE
 from trainer import Trainer
 import utils
-import tqdm
-import pandas as pd
 
 
 configurations = {
@@ -24,19 +18,20 @@ configurations = {
         lr=1e-3,
         momentum=0.9,
         weight_decay=0.0,
-        gamma=0.1, # "lr_policy: step"
-        step_size=200000, # "lr_policy: step" e-6
+        gamma=0.1,  # "lr_policy: step"
+        step_size=200000,  # "lr_policy: step" e-6
         interval_validate=1000,
     ),
 }
 
+
 def main():
     parser = argparse.ArgumentParser("Variational autoencoders for collaborative filtering")
-    parser.add_argument('cmd', type=str,  choices=['train'], help='train')
+    parser.add_argument('cmd', type=str, choices=['train'], help='train')
     parser.add_argument('--arch_type', type=str, default='MultiVAE', help='architecture', choices=['MultiVAE', 'MultiDAE'])
     parser.add_argument('--dataset_name', type=str, default='ml-20m', help='camera model type', choices=['ml-20m', 'lastfm-360k'])
-    parser.add_argument('--processed_dir', type=str, default='O:/dataset/vae_cf/data/ml-20m/pro_sg', help='dataset directory')
-    parser.add_argument('--n_items', type=int, default=1, help='n items')
+    parser.add_argument('--processed_dir', type=str, default='ml-20m/', help='dataset directory')
+    parser.add_argument('--n_items', type=int, default=20108, help='n items')
     parser.add_argument('--conditioned_on', type=str, default=None, help='conditioned on user profile (g: gender, a: age, c: country) for Last.fm')
     parser.add_argument('--checkpoint_dir', type=str, default='./checkpoint/', help='checkpoints directory')
     parser.add_argument('--checkpoint_freq', type=int, default=1, help='checkpoint save frequency')
@@ -46,9 +41,9 @@ def main():
     parser.add_argument('--start_step', dest='start_step', type=int, default=0, help='start step')
     parser.add_argument('--total_steps', dest='total_steps', type=int, default=int(3e5), help='Total number of steps')
     parser.add_argument('--batch_size', type=int, default=1, help='batch size')
-    parser.add_argument('--train_batch_size', type=int, default=1, help='batch size')
-    parser.add_argument('--valid_batch_size', type=int, default=1, help='batch size in validation')
-    parser.add_argument('--test_batch_size', type=int, default=1, help='batch size in test')
+    parser.add_argument('--train_batch_size', type=int, default=500, help='batch size')
+    parser.add_argument('--valid_batch_size', type=int, default=2000, help='batch size in validation')
+    parser.add_argument('--test_batch_size', type=int, default=2000, help='batch size in test')
     parser.add_argument('--print_freq', type=int, default=1, help='log print frequency')
     parser.add_argument('--upper_train', type=int, default=-1, help='max of train images(for debug)')
     parser.add_argument('--upper_valid', type=int, default=-1, help='max of valid images(for debug)')
@@ -92,7 +87,7 @@ def main():
 
     # 2. model
     n_conditioned = 0
-    if args.conditioned_on: # used for conditional VAE
+    if args.conditioned_on:  # used for conditional VAE
         if 'g' in args.conditioned_on:
             n_conditioned += 3
         if 'a' in args.conditioned_on:
@@ -137,6 +132,7 @@ def main():
             train_loader=train_loader,
             valid_loader=valid_loader,
             test_loader=test_loader,
+            start_epoch=start_epoch,
             start_step=start_step,
             total_steps=args.total_steps,
             interval_validate=args.valid_freq,

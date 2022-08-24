@@ -1,19 +1,13 @@
 #!/usr/bin/env python
 
-import collections
 import os
 
 import numpy as np
-import PIL.Image
-import scipy.io
-import torch
-from torch.utils import data
-import time
-import utils
-import glob
-import tqdm
 from scipy import sparse
-import pandas as pd
+from torch.utils import data
+
+import utils
+
 
 class MovieLensDataset(data.Dataset):
 
@@ -91,7 +85,6 @@ class LastfmDataset(data.Dataset):
         self.train_data, self.vad_data_tr, self.vad_data_te, self.test_data_tr, self.test_data_te, \
             self.train_prof, self.vad_prof, self.test_prof = utils.load_weights_pkl(fname)
 
-
         if self.regex:
             self.train_prof = self.train_prof.sort_values(by='uid_fm0').filter(regex=self.regex).values
             self.vad_prof = self.vad_prof.sort_values(by='uid_fm0').filter(regex=self.regex).values
@@ -104,7 +97,6 @@ class LastfmDataset(data.Dataset):
         assert self.train_data.shape[0] == self.train_prof.shape[0]
         assert self.vad_data_tr.shape[0] == self.vad_prof.shape[0]
         assert self.test_data_tr.shape[0] == self.test_prof.shape[0]
-
 
         self.split = split
         self.fold_in = fold_in

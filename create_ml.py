@@ -1,22 +1,26 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import argparse
 import os
 import sys
+import argparse
+
 import numpy as np
-from scipy import sparse
 import pandas as pd
+from scipy import sparse
 import pickle
+
 
 def save_weights_pkl(fname, weights):
     with open(fname, 'wb') as f:
         pickle.dump(weights, f, pickle.HIGHEST_PROTOCOL)
 
+
 def load_weights_pkl(fname):
     with open(fname, 'rb') as f:
         weights = pickle.load(f)
     return weights
+
 
 parser = argparse.ArgumentParser("Data creation for VAE based collaborative filtering")
 parser.add_argument('--dataset_name', type=str, default='ml-20m', help='dataset name', choices=['ml-20m'])
@@ -34,6 +38,7 @@ new_user_id = raw_data_orig['userId'].drop_duplicates().reset_index().rename(col
 raw_data_full = raw_data_orig.merge(new_user_id, on='userId', how='left').merge(new_movie_id, on='movieId', how='left')
 raw_data_full = raw_data_full.drop(labels=['userId', 'movieId', 'timestamp'], axis=1).rename(columns={"new_userId": "userId", "new_movieId": "movieId"})
 
+
 def get_count(tp, id):
     playcount_groupbyid = tp[[id]].groupby(id, as_index=False)
     count = playcount_groupbyid.size()
@@ -50,24 +55,25 @@ def filter_triplets(tp, min_uc=5, min_sc=0):
     # After doing this, some of the items will have less than min_uc users, but should only be a small proportion
     if min_uc > 0:
         usercount = get_count(tp, 'userId')
-        tp = tp[tp['userId'].isin(usercount.index[usercount >= min_uc])]
+        # tp = tp[tp['userId'].isin(usercount.index[usercount >= min_uc])]
+        tp = tp[tp['userId'].isin(usercount['userId'][usercount['size'] >= min_uc])]
 
     # Update both usercount and itemcount after filtering
     usercount, itemcount = get_count(tp, 'userId'), get_count(tp, 'movieId')
     return tp, usercount, itemcount
 
+
 raw_data, user_activity, item_popularity = filter_triplets(raw_data_full, min_uc=5, min_sc=0)
 
-sparsity = 1. * raw_data.shape[0] / (user_activity.shape[0] *
-item_popularity.shape[0])
+sparsity = 1. * raw_data.shape[0] / (user_activity.shape[0] * item_popularity.shape[0])
 print("After filtering, there are %d watching events from %d users and %d movies (sparsity: %.3f%%)" %
       (raw_data.shape[0], user_activity.shape[0], item_popularity.shape[0], sparsity * 100))
 
-unique_uid = user_activity.index
+unique_uid = user_activity['userId']
 
 np.random.seed(98765)
 idx_perm = np.random.permutation(unique_uid.size)
-unique_uid = unique_uid[idx_perm] # shuffle
+unique_uid = unique_uid[idx_perm]  # shuffle
 
 # create train/validation/test users
 n_users = unique_uid.size
@@ -99,10 +105,10 @@ def split_train_test_proportion(data, test_prop=0.2):
     np.random.seed(98765)
 
     for i, (_, group) in enumerate(data_grouped_by_user):
-        n_items_u = len(group) # n records for this user
+        n_items_u = len(group)  # n records for this user
 
         if n_items_u >= 5:
-            idx = np.zeros(n_items_u, dtype='bool') # array([False, False, False])
+            idx = np.zeros(n_items_u, dtype='bool')  # array([False, False, False])
             idx[np.random.choice(n_items_u, size=int(test_prop * n_items_u), replace=False).astype('int64')] = True
 
             tr_list.append(group[np.logical_not(idx)])
@@ -119,11 +125,12 @@ def split_train_test_proportion(data, test_prop=0.2):
 
     return data_tr, data_te
 
+
 train_plays = train_plays.merge(unique_uid_df, on='userId', how='left')
 train_plays = train_plays.merge(unique_sid_df, on='movieId', how='left')
-train_plays["uid_fm0"] = train_plays["uid"] # add the same column as valid and test dataset
+train_plays["uid_fm0"] = train_plays["uid"]  # add the same column as valid and test dataset
 
-train_plays_profile = train_plays.drop_duplicates(subset="uid_fm0").filter(regex="^[ugac].*") # unique data for each user
+train_plays_profile = train_plays.drop_duplicates(subset="uid_fm0").filter(regex="^[ugac].*")  # unique data for each user
 assert train_plays_profile['uid'].shape[0] == n_users - n_heldout_users * 2
 
 vad_plays = raw_data.loc[raw_data['userId'].isin(vd_users)]
@@ -178,6 +185,7 @@ with open(os.path.join(args.out_data_dir, 'unique_sid.txt'), 'r') as f:
 
 n_items = len(unique_sid)
 
+
 def load_train_data(csv_file):
     tp = pd.read_csv(csv_file)
     n_users = tp['uid'].max() + 1
@@ -186,7 +194,9 @@ def load_train_data(csv_file):
     data = sparse.csr_matrix((np.ones_like(rows), (rows, cols)), dtype='float64', shape=(n_users, n_items))
     return data
 
+
 train_data_csr = load_train_data(os.path.join(args.out_data_dir, 'train.csv'))
+
 
 def load_tr_te_data(csv_file_tr, csv_file_te):
     tp_tr = pd.read_csv(csv_file_tr)
@@ -203,6 +213,7 @@ def load_tr_te_data(csv_file_tr, csv_file_te):
     data_tr = sparse.csr_matrix((np.ones_like(rows_tr), (rows_tr, cols_tr)), dtype='float64', shape=(end_idx - start_idx + 1, n_items))
     data_te = sparse.csr_matrix((np.ones_like(rows_te), (rows_te, cols_te)), dtype='float64', shape=(end_idx - start_idx + 1, n_items))
     return data_tr, data_te
+
 
 vad_data_tr_csr, vad_data_te_csr = load_tr_te_data(os.path.join(args.out_data_dir, 'validation_tr.csv'), os.path.join(args.out_data_dir, 'validation_te.csv'))
 

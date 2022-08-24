@@ -3,11 +3,9 @@ import torch.nn as nn
 import torch.nn.functional as f
 from torch.autograd import Variable
 
-import math
-import utils
-import numpy as np
 
 __all__ = ['MultiVAE']
+
 
 class Encoder(nn.Module):
     def __init__(self, options, dropout_p=0.5, q_dims=[20108, 600, 200]):
@@ -56,6 +54,7 @@ class Decoder(nn.Module):
         x = self.tanh(x)
         x = self.linear_2(x)
         return x
+
 
 class MultiVAE(nn.Module):
     def __init__(self, cuda2=True, weight_decay=0.0, dropout_p=0.5, q_dims=[20108, 600, 200], p_dims=[200, 600, 20108], n_conditioned=0):

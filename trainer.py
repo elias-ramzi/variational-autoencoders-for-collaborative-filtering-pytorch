@@ -1,29 +1,45 @@
 # -*- coding: utf-8 -*-
 
-import datetime
-import math
-import os
 import time
+import datetime
 
 import numpy as np
-import scipy.io
 import torch
 from torch.autograd import Variable
 import torch.nn.functional as f
+import tqdm
 
 import utils
 from utils import AverageMeter
-import tqdm
 
 
 class Trainer(object):
 
-    def __init__(self, cmd, cuda, model, optim=None,
-                 train_loader=None, valid_loader=None, test_loader=None, log_file=None,
-                 interval_validate=1, lr_scheduler=None,
-                 start_step=0, total_steps=1e5, beta=0.05, start_epoch=0,
-                 total_anneal_steps=200000, anneal_cap=0.2, do_normalize=True,
-                 checkpoint_dir=None, result_dir=None, print_freq=1, result_save_freq=1, checkpoint_freq=1):
+    def __init__(
+        self,
+        cmd,
+        cuda,
+        model,
+        optim=None,
+        train_loader=None,
+        valid_loader=None,
+        test_loader=None,
+        log_file=None,
+        interval_validate=1,
+        lr_scheduler=None,
+        start_step=0,
+        total_steps=1e5,
+        beta=0.05,
+        start_epoch=0,
+        total_anneal_steps=200000,
+        anneal_cap=0.2,
+        do_normalize=True,
+        checkpoint_dir=None,
+        result_dir=None,
+        print_freq=1,
+        result_save_freq=1,
+        checkpoint_freq=1,
+    ):
 
         self.cmd = cmd
         self.cuda = cuda
@@ -59,12 +75,9 @@ class Trainer(object):
         self.n20_max_va, self.n100_max_va, self.r20_max_va, self.r50_max_va = 0, 0, 0, 0
         self.n20_max_te, self.n100_max_te, self.r20_max_te, self.r50_max_te = 0, 0, 0, 0
 
-
     def validate(self, cmd="valid"):
         assert cmd in ['valid', 'test']
-        batch_time = AverageMeter()
         data_time = AverageMeter()
-        losses = AverageMeter()
         self.model.eval()
 
         end = time.time()
@@ -74,9 +87,13 @@ class Trainer(object):
         loader_ = self.valid_loader if cmd == 'valid' else self.test_loader
 
         step_counter = 0
-        for batch_idx, (data_tr, data_te, prof) in tqdm.tqdm(enumerate(loader_), total=len(loader_),
-                                   desc='{} check epoch={}, len={}'.format('Valid' if cmd == 'valid' else 'Test',
-                                                               self.epoch, len(loader_)), ncols=80, leave=False):
+        for batch_idx, (data_tr, data_te, prof) in tqdm.tqdm(
+            enumerate(loader_),
+            total=len(loader_),
+            desc='{} check epoch={}, len={}'.format('Valid' if cmd == 'valid' else 'Test', self.epoch, len(loader_)),
+            ncols=80,
+            leave=False,
+        ):
             step_counter = step_counter + 1
 
             if self.cuda:
@@ -104,8 +121,7 @@ class Trainer(object):
         n100_list = np.concatenate(n100_list, axis=0)
         r20_list = np.concatenate(r20_list, axis=0)
         r50_list = np.concatenate(r50_list, axis=0)
-        
-        
+
         if cmd == 'valid':
             self.n20_max_va = max(self.n20_max_va, n20_list.mean())
             self.n100_max_va = max(self.n100_max_va, n100_list.mean())
@@ -130,17 +146,19 @@ class Trainer(object):
 
         self.model.train()
 
-
     def train_epoch(self):
-        cmd = "train"
-        batch_time = AverageMeter()
         data_time = AverageMeter()
         losses = AverageMeter()
         self.model.train()
 
         end = time.time()
-        for batch_idx, (data_tr, data_te, prof) in tqdm.tqdm(enumerate(self.train_loader), total=len(self.train_loader),
-                desc='Train check epoch={}, len={}'.format(self.epoch, len(self.train_loader)), ncols=80, leave=False):
+        for batch_idx, (data_tr, data_te, prof) in tqdm.tqdm(
+            enumerate(self.train_loader),
+            total=len(self.train_loader),
+            desc='Train check epoch={}, len={}'.format(self.epoch, len(self.train_loader)),
+            ncols=80,
+            leave=False,
+        ):
             self.step += 1
 
             if self.cuda:
@@ -167,26 +185,27 @@ class Trainer(object):
                     self.anneal = self.anneal_cap
 
                 loss = neg_ll + self.anneal * KL + l2_reg
-                print("MultiVAE", self.epoch, batch_idx, loss.item(), neg_ll.cpu().detach().numpy(), KL.cpu().detach().numpy(), l2_reg.cpu().detach().numpy() / 2, self.anneal, self.step, self.optim.param_groups[0]['lr'])
+                # print("MultiVAE", self.epoch, batch_idx, loss.item(), neg_ll.cpu().detach().numpy(), KL.cpu().detach().numpy(), l2_reg.cpu().detach().numpy() / 2, self.anneal, self.step, self.optim.param_groups[0]['lr'])
             else:
                 loss = neg_ll + l2_reg
-                print("MultiDAE", self.epoch, batch_idx, loss.item(), neg_ll.cpu().detach().numpy(), l2_reg.cpu().detach().numpy() / 2, self.step)
+                # print("MultiDAE", self.epoch, batch_idx, loss.item(), neg_ll.cpu().detach().numpy(), l2_reg.cpu().detach().numpy() / 2, self.step)
 
             # backprop
             self.model.zero_grad()
             loss.backward()
             self.optim.step()
 
-            if self.interval_validate > 0 and (self.step + 1) % self.interval_validate == 0:
-                print("CALLING VALID", cmd, self.step, )
-                self.validate()
+            losses.update(loss.item())
+
+            # if self.interval_validate > 0 and (self.step + 1) % self.interval_validate == 0:
+            #     print("CALLING VALID", cmd, self.step, )
+            #     self.validate()
 
     def train(self):
         max_epoch = 200
         for epoch in tqdm.trange(0, max_epoch, desc='Train', ncols=80):
             self.epoch = epoch
-            self.lr_scheduler.step()
             self.train_epoch()
+            self.lr_scheduler.step()
             self.validate(cmd='valid')
             self.validate(cmd='test')
-

@@ -3,11 +3,8 @@ import torch.nn as nn
 import torch.nn.functional as f
 from torch.autograd import Variable
 
-import math
-import utils
-import numpy as np
-
 __all__ = ['MultiDAE']
+
 
 class Encoder(nn.Module):
     def __init__(self, options, dropout_p=0.5, q_dims=[20108, 200]):
@@ -49,6 +46,7 @@ class Decoder(nn.Module):
         x = self.linear_1(x)
         return x
 
+
 class MultiDAE(nn.Module):
     def __init__(self, cuda2=True, weight_decay=0.0, dropout_p=0.5, q_dims=[20108, 200], p_dims=[200, 20108]):
         super(MultiDAE, self).__init__()
@@ -74,4 +72,3 @@ class MultiDAE(nn.Module):
         if self.cuda2:
             l2_reg = l2_reg.cuda()
         return l2_reg[0]
-
