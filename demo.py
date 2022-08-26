@@ -99,7 +99,8 @@ def main():
         model = MultiVAE(dropout_p=args.dropout_p, weight_decay=0.0, cuda2=cuda,
                          q_dims=[args.n_items, 600, 200], p_dims=[200, 600, args.n_items], n_conditioned=n_conditioned)
     if 'MultiDAE' in args.arch_type:
-        model = MultiDAE(dropout_p=args.dropout_p, weight_decay=0.01 / args.train_batch_size, cuda2=cuda)
+        # model = MultiDAE(dropout_p=args.dropout_p, weight_decay=0.01 / args.train_batch_size, cuda2=cuda)
+        model = MultiDAE(dropout_p=args.dropout_p, weight_decay=0., cuda2=cuda)
     print(model)
 
     start_epoch = 0

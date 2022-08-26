@@ -15,8 +15,8 @@ class Encoder(nn.Module):
 
         self.dropout = nn.Dropout(p=dropout_p, inplace=False)
         self.linear_1 = nn.Linear(self.q_dims[0], self.q_dims[1], bias=True)
-        self.linear_2 = nn.Linear(self.q_dims[1], self.q_dims[2] * 2, bias=True)
         self.tanh = nn.Tanh()
+        self.linear_2 = nn.Linear(self.q_dims[1], self.q_dims[2] * 2, bias=True)
 
         for module_name, m in self.named_modules():
             if isinstance(m, nn.Linear):
@@ -40,8 +40,8 @@ class Decoder(nn.Module):
         self.p_dims = p_dims
 
         self.linear_1 = nn.Linear(self.p_dims[0], self.p_dims[1], bias=True)
-        self.linear_2 = nn.Linear(self.p_dims[1], self.p_dims[2], bias=True)
         self.tanh = nn.Tanh()
+        self.linear_2 = nn.Linear(self.p_dims[1], self.p_dims[2], bias=True)
 
         for module_name, m in self.named_modules():
             if isinstance(m, nn.Linear):
@@ -95,10 +95,10 @@ class MultiVAE(nn.Module):
 
     def get_l2_reg(self):
         l2_reg = Variable(torch.FloatTensor(1), requires_grad=True)
+        if self.cuda2:
+            l2_reg = l2_reg.cuda()
         if self.weight_decay > 0:
             for k, m in self.state_dict().items():
                 if k.endswith('.weight'):
                     l2_reg = l2_reg + torch.norm(m, p=2) ** 2
-        if self.cuda2:
-            l2_reg = l2_reg.cuda()
         return self.weight_decay * l2_reg[0]

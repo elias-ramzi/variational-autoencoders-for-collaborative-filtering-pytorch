@@ -64,11 +64,11 @@ class MultiDAE(nn.Module):
 
     def get_l2_reg(self):
         l2_reg = Variable(torch.FloatTensor(1), requires_grad=True)
+        if self.cuda2:
+            l2_reg = l2_reg.cuda()
         if self.weight_decay > 0:
             for k, m in self.state_dict().items():
                 if k.endswith('.weight'):
                     l2_reg = l2_reg + torch.norm(m, p=2) ** 2
-            l2_reg = self.weight_decay * l2_reg
-        if self.cuda2:
-            l2_reg = l2_reg.cuda()
+        l2_reg = self.weight_decay * l2_reg
         return l2_reg[0]
