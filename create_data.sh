@@ -8,18 +8,56 @@ PYTHON=python
 # First, download the dataset at http://files.grouplens.org/datasets/movielens/ml-20m.zip
 
 
+# # data directory
+# DATASET=ml-20m
+# DATA_DIR=/local/SSD_DEEPLEARNING_1/gnn/ml-20m
+# RATING_FILE_PATH=$DATA_DIR/ratings.csv
+#
+# OUT_RATING_PATH=$DATA_DIR/ratings_35.csv
+#
+# # select rows where the rating is greater than or equal to 3.5
+# cat $RATING_FILE_PATH | awk -v FS=$',' -v OFS=$',' '($3>3.5){print $1,$2,$3,$4}' > $OUT_RATING_PATH
+#
+# PICKLE_OUT_DIR=$DATASET
+# $PYTHON create_ml.py --dataset_name $DATASET --out_data_dir $PICKLE_OUT_DIR --rating_file $OUT_RATING_PATH
+
+
+###############################
+#
+# create dateset for movielens-latest small
+# First, download the dataset at https://files.grouplens.org/datasets/movielens/ml-latest-small.zip
+
+
 # data directory
-DATASET=ml-20m
-DATA_DIR=/local/SSD_DEEPLEARNING_1/ml-20m
+# wget https://files.grouplens.org/datasets/movielens/ml-latest-small.zip
+# unzip ml-latest-small.zip
+DATASET=ml-latest-small
+DATA_DIR=ml-latest-small
 RATING_FILE_PATH=$DATA_DIR/ratings.csv
 
-OUT_RATING_PATH=$DATA_DIR/ratings_35.csv
-
-# select rows where the rating is greater than or equal to 3.5
-cat $RATING_FILE_PATH | awk -v FS=$',' -v OFS=$',' '($3>3.5){print $1,$2,$3,$4}' > $OUT_RATING_PATH
+OUT_RATING_PATH=$DATA_DIR/ratings_25.csv
 
 PICKLE_OUT_DIR=$DATASET
-$PYTHON create_ml.py --dataset_name $DATASET --out_data_dir $PICKLE_OUT_DIR --rating_file $OUT_RATING_PATH
+$PYTHON create_mllatestsmall.py --dataset_name $DATASET --out_data_dir $PICKLE_OUT_DIR --rating_file $RATING_FILE_PATH
+
+
+###############################
+#
+# create dateset for movielens-20m
+# First, download the dataset at http://files.grouplens.org/datasets/movielens/ml-20m.zip
+
+
+# data directory
+# wget http://files.grouplens.org/datasets/movielens/ml-100k.zip
+# unzip ml-100k.zip
+# DATASET=ml-100k
+# DATA_DIR=ml-100k
+# RATING_FILE_PATH=$DATA_DIR/u.data
+#
+# OUT_RATING_PATH=$DATA_DIR/ratings_35.csv
+#
+# PICKLE_OUT_DIR=$DATASET
+# $PYTHON create_ml100k.py --dataset_name $DATASET --out_data_dir $PICKLE_OUT_DIR --rating_file $RATING_FILE_PATH
 
 ###############################
 #

@@ -11,7 +11,6 @@ import tqdm
 
 import utils
 from utils import AverageMeter
-from smooth_ndcg import SmoothNDCG
 
 
 class Trainer(object):
@@ -77,7 +76,6 @@ class Trainer(object):
         self.n20_max_te, self.n100_max_te, self.r20_max_te, self.r50_max_te = 0, 0, 0, 0
         self.n20_max_tr, self.n100_max_tr, self.r20_max_tr, self.r50_max_tr = 0, 0, 0, 0
 
-        self.smooth_ndcg = SmoothNDCG(1.0)
         self.scaler = torch.cuda.amp.GradScaler()
 
     @torch.no_grad()
@@ -201,9 +199,8 @@ class Trainer(object):
                 else:
                     logits = self.model.forward(data_tr)
 
-                # log_softmax_var = F.log_softmax(logits, dim=1)
-                # neg_ll = - torch.mean(torch.sum(log_softmax_var * data_tr, dim=1))
-                neg_ll = self.smooth_ndcg(logits, data_tr)
+                log_softmax_var = F.log_softmax(logits, dim=1)
+                neg_ll = - torch.mean(torch.sum(log_softmax_var * data_tr, dim=1))
                 l2_reg = self.model.get_l2_reg()
 
                 if self.model.__class__.__name__ == 'MultiVAE':
