@@ -44,6 +44,7 @@ class Trainer(object):
         self.cmd = cmd
         self.cuda = cuda
         self.model = model
+        print(f"Model has {utils.count_parameters(self.model)} parameters")
 
         self.optim = optim
         self.lr_scheduler = lr_scheduler
@@ -75,6 +76,8 @@ class Trainer(object):
         self.n20_max_va, self.n100_max_va, self.r20_max_va, self.r50_max_va = 0, 0, 0, 0
         self.n20_max_te, self.n100_max_te, self.r20_max_te, self.r50_max_te = 0, 0, 0, 0
         self.n20_max_tr, self.n100_max_tr, self.r20_max_tr, self.r50_max_tr = 0, 0, 0, 0
+
+        self.save_test_metric = False
 
         self.scaler = torch.cuda.amp.GradScaler()
 
@@ -139,15 +142,22 @@ class Trainer(object):
         if cmd == 'valid':
             self.n20_max_va = max(self.n20_max_va, n20_list.mean())
             self.n100_max_va = max(self.n100_max_va, n100_list.mean())
+            self.save_test_metric = r20_list.mean() >= self.r20_max_va
             self.r20_max_va = max(self.r20_max_va, r20_list.mean())
             self.r50_max_va = max(self.r50_max_va, r50_list.mean())
             max_metrics = "{},{},{},{:.5f},{:.5f},{:.5f},{:.5f}".format(cmd, self.epoch, self.step, self.n20_max_va, self.n100_max_va, self.r20_max_va, self.r50_max_va)
 
         elif cmd == 'test':
-            self.n20_max_te = max(self.n20_max_te, n20_list.mean())
-            self.n100_max_te = max(self.n100_max_te, n100_list.mean())
-            self.r20_max_te = max(self.r20_max_te, r20_list.mean())
-            self.r50_max_te = max(self.r50_max_te, r50_list.mean())
+            if self.save_test_metric:
+                # self.n20_max_te = max(self.n20_max_te, n20_list.mean())
+                # self.n100_max_te = max(self.n100_max_te, n100_list.mean())
+                # self.r20_max_te = max(self.r20_max_te, r20_list.mean())
+                # self.r50_max_te = max(self.r50_max_te, r50_list.mean())
+                self.n20_max_te = n20_list.mean()
+                self.n100_max_te = n100_list.mean()
+                self.r20_max_te = r20_list.mean()
+                self.r50_max_te = r50_list.mean()
+                self.save_test_metric = False
             max_metrics = "{},{},{},{:.5f},{:.5f},{:.5f},{:.5f}".format(cmd, self.epoch, self.step, self.n20_max_te, self.n100_max_te, self.r20_max_te, self.r50_max_te)
 
         elif cmd == 'train':

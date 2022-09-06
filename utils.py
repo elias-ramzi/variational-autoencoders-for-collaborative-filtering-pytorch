@@ -5,6 +5,13 @@ import pickle
 import bottleneck as bn
 
 
+def count_parameters(model):
+    """
+    this functions returns the learnable parameters of a model
+    """
+    return sum(p.numel() for p in model.parameters() if p.requires_grad)
+
+
 def save_weights_pkl(fname, weights):
     with open(fname, 'wb') as f:
         pickle.dump(weights, f, pickle.HIGHEST_PROTOCOL)
@@ -59,18 +66,31 @@ def NDCG_binary_at_k_batch(X_pred, heldout_batch, k=100):
     tp = 1. / np.log2(np.arange(2, k + 2))
 
     DCG = (heldout_batch[np.arange(batch_users)[:, np.newaxis], idx_topk] * tp).sum(axis=1)
-    IDCG = np.array([(tp[:min(int(n), k)]).sum() for n in heldout_batch.sum(axis=1)])
+    IDCG = np.array([(tp[:min(int(n), k)]).sum() for n in np.minimum(k, heldout_batch.sum(axis=1))])
     return DCG / IDCG
 
 
+# def Recall_at_k_batch(X_pred, heldout_batch, k=100):
+#     batch_users = X_pred.shape[0]
+#
+#     idx = bn.argpartition(-X_pred, k, axis=1)  # top k
+#     X_pred_binary = np.zeros_like(X_pred, dtype=bool)
+#     X_pred_binary[np.arange(batch_users)[:, np.newaxis], idx[:, :k]] = True
+#
+#     X_true_binary = (heldout_batch > 0)
+#     tmp = (np.logical_and(X_true_binary, X_pred_binary).sum(axis=1)).astype(np.float32)
+#     recall = tmp / np.minimum(k, X_true_binary.sum(axis=1))
+#     import ipdb; ipdb.set_trace()
+#     return recall
+
+
 def Recall_at_k_batch(X_pred, heldout_batch, k=100):
-    batch_users = X_pred.shape[0]
+    import torch
+    X_pred = torch.from_numpy(X_pred)
+    heldout_batch = torch.from_numpy(heldout_batch)
 
-    idx = bn.argpartition(-X_pred, k, axis=1)  # top k
-    X_pred_binary = np.zeros_like(X_pred, dtype=bool)
-    X_pred_binary[np.arange(batch_users)[:, np.newaxis], idx[:, :k]] = True
-
-    X_true_binary = (heldout_batch > 0)
-    tmp = (np.logical_and(X_true_binary, X_pred_binary).sum(axis=1)).astype(np.float32)
-    recall = tmp / np.minimum(k, X_true_binary.sum(axis=1))
-    return recall
+    idx = X_pred.topk(k, -1).indices
+    target = heldout_batch.gather(1, idx)
+    positives = heldout_batch.sum(-1)
+    recall = target.sum(-1) / torch.where(positives < k, positives, torch.tensor(k).float())
+    return recall.numpy()
