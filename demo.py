@@ -58,9 +58,13 @@ def main():
     parser.add_argument('-j', '--workers', default=4, type=int, metavar='N', help='number of data loading workers (default: 4)')
     args = parser.parse_args()
 
+    ndcg = []
+    ap = []
     r_at_20 = []
     n_at_20 = []
     for run_number in range(args.runs):
+        print(f"starting run {run_number+1}/{args.runs}")
+
         if args.cmd == 'train':
             os.makedirs(args.checkpoint_dir, exist_ok=True)
             cfg = configurations[args.config]
@@ -155,9 +159,13 @@ def main():
                 anneal_cap=args.anneal_cap,
             )
             trainer.train()
+            ndcg.append(trainer.ndcg_max_te)
+            ap.append(trainer.ap_max_te)
             r_at_20.append(trainer.r20_max_te)
             n_at_20.append(trainer.n20_max_te)
 
+    print("Test score : ", f"NDCG : {np.around(np.mean(ndcg)*100, 2)}", "$\\pm$", f"{np.around(np.std(ndcg)*100, 2)}")
+    print("Test score : ", f"AP : {np.around(np.mean(ap)*100, 2)}", "$\\pm$", f"{np.around(np.std(ap)*100, 2)}")
     print("Test score : ", f"Recall@20 : {np.around(np.mean(r_at_20)*100, 2)}", "$\\pm$", f"{np.around(np.std(r_at_20)*100, 2)}")
     print("Test score : ", f"NDCG@20 : {np.around(np.mean(n_at_20)*100, 2)}", "$\\pm$", f"{np.around(np.std(n_at_20)*100, 2)}")
 

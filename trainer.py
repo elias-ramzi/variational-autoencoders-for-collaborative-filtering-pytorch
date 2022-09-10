@@ -73,9 +73,9 @@ class Trainer(object):
         self.anneal_cap = anneal_cap
 
         self.n20_all = []
-        self.n20_max_va, self.n100_max_va, self.r20_max_va, self.r50_max_va = 0, 0, 0, 0
-        self.n20_max_te, self.n100_max_te, self.r20_max_te, self.r50_max_te = 0, 0, 0, 0
-        self.n20_max_tr, self.n100_max_tr, self.r20_max_tr, self.r50_max_tr = 0, 0, 0, 0
+        self.ndcg_max_va, self.ap_max_va, self.n20_max_va, self.n100_max_va, self.r20_max_va, self.r50_max_va = 0, 0, 0, 0, 0, 0
+        self.ndcg_max_te, self.ap_max_te, self.n20_max_te, self.n100_max_te, self.r20_max_te, self.r50_max_te = 0, 0, 0, 0, 0, 0
+        self.ndcg_max_tr, self.ap_max_tr, self.n20_max_tr, self.n100_max_tr, self.r20_max_tr, self.r50_max_tr = 0, 0, 0, 0, 0, 0
 
         self.save_test_metric = False
 
@@ -90,6 +90,7 @@ class Trainer(object):
         end = time.time()
 
         n20_list, n100_list, r20_list, r50_list = [], [], [], []
+        ndcg_list, ap_list = [], []
 
         if cmd == 'valid':
             loader_ = self.valid_loader
@@ -114,6 +115,7 @@ class Trainer(object):
 
             if self.cuda:
                 data_tr = data_tr.cuda()
+                data_te = data_te.cuda()
                 prof = prof.cuda()
             data_tr = Variable(data_tr)
             prof = Variable(prof)
@@ -125,54 +127,64 @@ class Trainer(object):
                     logits, KL, mu_q, std_q, epsilon, sampled_z = self.model.forward(data_tr, prof)
                 else:
                     logits = self.model.forward(data_tr)
-            pred_val = logits.cpu().detach().numpy()
+            pred_val = logits
             if cmd != 'train':
-                pred_val[data_tr.cpu().detach().numpy().nonzero()] = -np.inf
+                pred_val[data_tr.bool()] = -float('inf')
 
-            n20_list.append(utils.NDCG_binary_at_k_batch(pred_val, data_te.numpy(), k=20))
-            n100_list.append(utils.NDCG_binary_at_k_batch(pred_val, data_te.numpy(), k=100))
-            r20_list.append(utils.Recall_at_k_batch(pred_val, data_te.numpy(), k=20))
-            r50_list.append(utils.Recall_at_k_batch(pred_val, data_te.numpy(), k=50))
+            ap_list.append(utils.average_precision(pred_val, data_te))
+            ndcg_list.append(utils.NDCG_binary_at_k_batch(pred_val, data_te, None))
+            n20_list.append(utils.NDCG_binary_at_k_batch(pred_val, data_te, k=20))
+            n100_list.append(utils.NDCG_binary_at_k_batch(pred_val, data_te, k=100))
+            r20_list.append(utils.Recall_at_k_batch(pred_val, data_te, k=20))
+            r50_list.append(utils.Recall_at_k_batch(pred_val, data_te, k=50))
 
+        ap_list = np.concatenate(ap_list, axis=0)
+        ndcg_list = np.concatenate(ndcg_list, axis=0)
         n20_list = np.concatenate(n20_list, axis=0)
         n100_list = np.concatenate(n100_list, axis=0)
         r20_list = np.concatenate(r20_list, axis=0)
         r50_list = np.concatenate(r50_list, axis=0)
 
         if cmd == 'valid':
+            self.ndcg_max_va = max(self.ndcg_max_va, ndcg_list.mean())
+            self.ap_max_va = max(self.ap_max_va, ap_list.mean())
             self.n20_max_va = max(self.n20_max_va, n20_list.mean())
             self.n100_max_va = max(self.n100_max_va, n100_list.mean())
             self.save_test_metric = r20_list.mean() >= self.r20_max_va
             self.r20_max_va = max(self.r20_max_va, r20_list.mean())
             self.r50_max_va = max(self.r50_max_va, r50_list.mean())
-            max_metrics = "{},{},{},{:.5f},{:.5f},{:.5f},{:.5f}".format(cmd, self.epoch, self.step, self.n20_max_va, self.n100_max_va, self.r20_max_va, self.r50_max_va)
+            max_metrics = "{},{},{},{:.5f},{:.5f},{:.5f},{:.5f}".format(cmd, self.epoch, self.step, self.ndcg_max_va, self.ap_max_va, self.r20_max_va, self.n20_max_va)
 
         elif cmd == 'test':
-            if self.save_test_metric:
+            if r20_list.mean() >= self.r20_max_te:
                 # self.n20_max_te = max(self.n20_max_te, n20_list.mean())
                 # self.n100_max_te = max(self.n100_max_te, n100_list.mean())
                 # self.r20_max_te = max(self.r20_max_te, r20_list.mean())
                 # self.r50_max_te = max(self.r50_max_te, r50_list.mean())
+                self.ndcg_max_te = ndcg_list.mean()
+                self.ap_max_te = ap_list.mean()
                 self.n20_max_te = n20_list.mean()
                 self.n100_max_te = n100_list.mean()
                 self.r20_max_te = r20_list.mean()
                 self.r50_max_te = r50_list.mean()
                 self.save_test_metric = False
-            max_metrics = "{},{},{},{:.5f},{:.5f},{:.5f},{:.5f}".format(cmd, self.epoch, self.step, self.n20_max_te, self.n100_max_te, self.r20_max_te, self.r50_max_te)
+            max_metrics = "{},{},{},{:.5f},{:.5f},{:.5f},{:.5f}".format(cmd, self.epoch, self.step, self.ndcg_max_te, self.ap_max_te, self.r20_max_te, self.n20_max_te)
 
         elif cmd == 'train':
+            self.ndcg_max_tr = max(self.ndcg_max_tr, ndcg_list.mean())
+            self.ap_max_tr = max(self.ap_max_tr, ap_list.mean())
             self.n20_max_tr = max(self.n20_max_tr, n20_list.mean())
             self.n100_max_tr = max(self.n100_max_tr, n100_list.mean())
             self.r20_max_tr = max(self.r20_max_tr, r20_list.mean())
             self.r50_max_tr = max(self.r50_max_tr, r50_list.mean())
-            max_metrics = "{},{},{},{:.5f},{:.5f},{:.5f},{:.5f}".format(cmd, self.epoch, self.step, self.n20_max_tr, self.n100_max_tr, self.r20_max_tr, self.r50_max_tr)
+            max_metrics = "{},{},{},{:.5f},{:.5f},{:.5f},{:.5f}".format(cmd, self.epoch, self.step, self.ndcg_max_tr, self.ap_max_tr, self.r20_max_tr, self.n20_max_tr)
 
         metrics = []
         metrics.append(max_metrics)
-        metrics.append("NDCG@20,{:.5f},{:.5f}".format(np.mean(n20_list), np.std(n20_list) / np.sqrt(len(n20_list))))
-        metrics.append("NDCG@100,{:.5f},{:.5f}".format(np.mean(n100_list), np.std(n100_list) / np.sqrt(len(n100_list))))
+        metrics.append("NDCG,{:.5f},{:.5f}".format(np.mean(ndcg_list), np.std(ndcg_list) / np.sqrt(len(ndcg_list))))
+        metrics.append("AP,{:.5f},{:.5f}".format(np.mean(ap_list), np.std(ap_list) / np.sqrt(len(ap_list))))
         metrics.append("Recall@20,{:.5f},{:.5f}".format(np.mean(r20_list), np.std(r20_list) / np.sqrt(len(r20_list))))
-        metrics.append("Recall@50,{:.5f},{:.5f}".format(np.mean(r50_list), np.std(r50_list) / np.sqrt(len(r50_list))))
+        metrics.append("NDCG@20,{:.5f},{:.5f}".format(np.mean(n20_list), np.std(n20_list) / np.sqrt(len(n20_list))))
         print('\n' + ",".join(metrics))
 
         self.model.train()
@@ -219,7 +231,6 @@ class Trainer(object):
                     else:
                         self.anneal = self.anneal_cap
 
-                    # import ipdb; ipdb.set_trace()
                     loss = neg_ll + self.anneal * KL + l2_reg
                     # print("MultiVAE", self.epoch, batch_idx, loss.item(), neg_ll.cpu().detach().numpy(), KL.cpu().detach().numpy(), l2_reg.cpu().detach().numpy() / 2, self.anneal, self.step, self.optim.param_groups[0]['lr'])
                 else:

@@ -5,13 +5,32 @@ import pandas as pd
 from scipy import sparse
 import pickle
 
-train = pd.read_csv(os.path.join('/share/DEEPLEARNING/datasets/graph_datasets/movielens/files_split/', 'train.csv'))
-val_struct = pd.read_csv(os.path.join('/share/DEEPLEARNING/datasets/graph_datasets/movielens/files_split/', 'validation_tr.csv'))
-val_pred = pd.read_csv(os.path.join('/share/DEEPLEARNING/datasets/graph_datasets/movielens/files_split/', 'validation_te.csv'))
-test_struct = pd.read_csv(os.path.join('/share/DEEPLEARNING/datasets/graph_datasets/movielens/files_split/', 'test_tr.csv'))
-test_pred = pd.read_csv(os.path.join('/share/DEEPLEARNING/datasets/graph_datasets/movielens/files_split/', 'test_te.csv'))
+
+# DATASET = 'ml-latest-small'
+# train = pd.read_csv(os.path.join('/share/DEEPLEARNING/datasets/graph_datasets/movielens/files_split/', 'train.csv'))
+# val_struct = pd.read_csv(os.path.join('/share/DEEPLEARNING/datasets/graph_datasets/movielens/files_split/', 'validation_tr.csv'))
+# val_pred = pd.read_csv(os.path.join('/share/DEEPLEARNING/datasets/graph_datasets/movielens/files_split/', 'validation_te.csv'))
+# test_struct = pd.read_csv(os.path.join('/share/DEEPLEARNING/datasets/graph_datasets/movielens/files_split/', 'test_tr.csv'))
+# test_pred = pd.read_csv(os.path.join('/share/DEEPLEARNING/datasets/graph_datasets/movielens/files_split/', 'test_te.csv'))
+
+# DATASET = 'gowalla'
+# train = pd.read_csv(os.path.join('/share/DEEPLEARNING/datasets/graph_datasets/gowalla_vae/', 'train.csv'))
+# val_struct = pd.read_csv(os.path.join('/share/DEEPLEARNING/datasets/graph_datasets/gowalla_vae/', 'validation_tr.csv'))
+# val_pred = pd.read_csv(os.path.join('/share/DEEPLEARNING/datasets/graph_datasets/gowalla_vae/', 'validation_te.csv'))
+# test_struct = pd.read_csv(os.path.join('/share/DEEPLEARNING/datasets/graph_datasets/gowalla_vae/', 'test_tr.csv'))
+# test_pred = pd.read_csv(os.path.join('/share/DEEPLEARNING/datasets/graph_datasets/gowalla_vae/', 'test_te.csv'))
+
+
+DATASET = 'yelp2018'
+train = pd.read_csv(os.path.join('/share/DEEPLEARNING/datasets/graph_datasets/yelp2018_vae/', 'train.csv'))
+val_struct = pd.read_csv(os.path.join('/share/DEEPLEARNING/datasets/graph_datasets/yelp2018_vae/', 'validation_tr.csv'))
+val_pred = pd.read_csv(os.path.join('/share/DEEPLEARNING/datasets/graph_datasets/yelp2018_vae/', 'validation_te.csv'))
+test_struct = pd.read_csv(os.path.join('/share/DEEPLEARNING/datasets/graph_datasets/yelp2018_vae/', 'test_tr.csv'))
+test_pred = pd.read_csv(os.path.join('/share/DEEPLEARNING/datasets/graph_datasets/yelp2018_vae/', 'test_te.csv'))
+
 
 users_train = sorted(train['uid'].unique().tolist())
+print(len(users_train))
 users_val = sorted(val_struct['uid'].unique().tolist())
 users_test = sorted(test_struct['uid'].unique().tolist())
 n_users = len(users_train) + len(users_val) + len(users_test)
@@ -43,7 +62,6 @@ def load_train_data(csv_file):
     tp = pd.read_csv(csv_file)
     n_users = tp['uid'].max() + 1
     n_items = len(pd.unique(tp['sid']))
-    print(n_items)
 
     rows, cols = tp['uid'], tp['sid']
     data = sparse.csr_matrix((np.ones_like(rows), (rows, cols)), dtype='float64', shape=(n_users, n_items))
@@ -82,6 +100,6 @@ test_data_tr_csr, test_data_te_csr = load_tr_te_data(
     n_items,
 )
 
-fname = os.path.join('ml-latest-small', 'data_csr.pkl')
+fname = os.path.join(DATASET, 'data_csr.pkl')
 datas = [train_data_csr, vad_data_tr_csr, vad_data_te_csr, test_data_tr_csr, test_data_te_csr]
 save_weights_pkl(fname, datas)

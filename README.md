@@ -2,14 +2,14 @@
 
 This repo implements Variational autoencoders for collaborative filtering in PyTorch presented in [1],
 and also does conditional VAE [2] to use user profiles in collaborative filtering.
-Numerical expriments are done for MovieLens dataset for VAE and Last.fm for conditional VAE. 
+Numerical expriments are done for MovieLens dataset for VAE and Last.fm for conditional VAE.
 
 ### Dataset
 
 Two datasets are used in this repo.
 * [MovieLens 20M Dataset](https://grouplens.org/datasets/movielens/20m/): This contains rating for movies by users.
 This collaborative filtering recommends movies user would like to watch.
-* [Last.fm Dataset - 360K users](http://ocelma.net/MusicRecommendationDataset/lastfm-360K.html): 
+* [Last.fm Dataset - 360K users](http://ocelma.net/MusicRecommendationDataset/lastfm-360K.html):
 This contains play counts of artists by users and user profile, gender, age, country and signup data.
 This collaborative filtering recommends artists user would like to listen to, using play counts and user profiles.
 You can use VAE conditioned on the the user profiles.
@@ -21,7 +21,7 @@ create_data.sh
 
 ### Training
 
-Usage: 
+Usage:
 ```bash
 python demo.py train <options>
 ```
@@ -46,12 +46,39 @@ python demo.py train <options>
 1. Dawen Liang, Rahul G. Krishnan, Matthew D. Hoffman, Tony Jebara. Variational Autoencoders for Collaborative Filtering,
     The Web Conference (WWW), 2018.  
     [arXiv](https://arxiv.org/abs/1802.05814), [github](https://github.com/dawenl/vae_cf)
-    
+
 2. Kihyuk Sohn, Honglak Lee, and Xinchen Yan. Learning Structured Output
     Representation Using Deep Conditional Generative Models. Advances in
-    Neural Information Processing Systems, 2015. 
+    Neural Information Processing Systems, 2015.
     [NIPS](https://papers.nips.cc/paper/5775-learning-structured-output-representation-using-deep-conditional-generative-models)
-    
-3. Irina Higgins, Loic Matthey, Arka Pal, Christopher Burgess, Xavier Glorot, Matthew Botvinick, Shakir Mohamed, Alexander Lerchner. 
+
+3. Irina Higgins, Loic Matthey, Arka Pal, Christopher Burgess, Xavier Glorot, Matthew Botvinick, Shakir Mohamed, Alexander Lerchner.
     beta-VAE: Learning basic visual concepts with a constrained variational framework. ICLR, 2017.
     [Paper link](https://openreview.net/forum?id=Sy2fzU9gl)
+
+
+
+
+
+```
+MovieLens
+---------
+python demo.py train --dataset_name ml-latest-small --processed_dir ml-latest-small/ --n_items 8157 --train_batch_size 100 --arch_type MultiVAE --runs 10
+
+python demo.py train --dataset_name ml-latest-small --processed_dir ml-latest-small/ --n_items 8157 --train_batch_size 100 --arch_type MultiDAE --runs 10
+
+
+Gowalla
+-------
+python demo.py train --dataset_name ml-latest-small --processed_dir gowalla/ --n_items 40981 --train_batch_size 512 --arch_type MultiVAE --runs 10 --gpu 1
+
+python demo.py train --dataset_name ml-latest-small --processed_dir gowalla/ --n_items 40981 --train_batch_size 512 --arch_type MultiDAE --runs 10 --gpu 1
+
+
+Yelp2018
+--------
+python demo.py train --dataset_name ml-latest-small --processed_dir yelp2018/ --n_items 38048 --train_batch_size 512 --arch_type MultiVAE --runs 10 --gpu 1
+
+python demo.py train --dataset_name ml-latest-small --processed_dir yelp2018/ --n_items 38048 --train_batch_size 512 --arch_type MultiDAE --runs 10 --gpu 1
+
+```
