@@ -256,6 +256,6 @@ class Trainer(object):
             self.epoch = epoch
             self.train_epoch()
             self.lr_scheduler.step()
-            self.validate(cmd='valid')
+            # self.validate(cmd='valid')
             self.validate(cmd='test')
             # self.validate(cmd='train')
