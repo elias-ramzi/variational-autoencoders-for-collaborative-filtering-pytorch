@@ -6,32 +6,32 @@ from scipy import sparse
 import pickle
 
 
-DATASET = 'ml-latest-small-trans'
-with open(os.path.join('/share/DEEPLEARNING/datasets/graph_datasets/movielens/', 'train.txt')) as f:
-    train = f.read()
-train = train.split('\n')
-train.remove('')
-with open(os.path.join('/share/DEEPLEARNING/datasets/graph_datasets/movielens/', 'test.txt')) as f:
-    test = f.read()
-test = test.split('\n')
-test.remove('')
-
-train_uid = []
-train_mid = []
-for line in map(lambda x: x.split(' '), train):
-    uid = int(line[0])
-    train_uid.extend([uid] * len(line[1:]))
-    train_mid.extend(map(int, line[1:]))
-
-test_uid = []
-test_mid = []
-for line in map(lambda x: x.split(' '), test):
-    uid = int(line[0])
-    test_uid.extend([uid] * len(line[1:]))
-    test_mid.extend(map(int, line[1:]))
-
-train = pd.DataFrame(list(zip(train_uid, train_mid)), columns=['uid', 'sid'])
-test = pd.DataFrame(list(zip(test_uid, test_mid)), columns=['uid', 'sid'])
+# DATASET = 'ml-latest-small-trans'
+# with open(os.path.join('/share/DEEPLEARNING/datasets/graph_datasets/movielens/', 'train.txt')) as f:
+#     train = f.read()
+# train = train.split('\n')
+# train.remove('')
+# with open(os.path.join('/share/DEEPLEARNING/datasets/graph_datasets/movielens/', 'test.txt')) as f:
+#     test = f.read()
+# test = test.split('\n')
+# test.remove('')
+#
+# train_uid = []
+# train_mid = []
+# for line in map(lambda x: x.split(' '), train):
+#     uid = int(line[0])
+#     train_uid.extend([uid] * len(line[1:]))
+#     train_mid.extend(map(int, line[1:]))
+#
+# test_uid = []
+# test_mid = []
+# for line in map(lambda x: x.split(' '), test):
+#     uid = int(line[0])
+#     test_uid.extend([uid] * len(line[1:]))
+#     test_mid.extend(map(int, line[1:]))
+#
+# train = pd.DataFrame(list(zip(train_uid, train_mid)), columns=['uid', 'sid'])
+# test = pd.DataFrame(list(zip(test_uid, test_mid)), columns=['uid', 'sid'])
 
 
 # DATASET = 'gowalla_trans'
@@ -42,26 +42,54 @@ test = pd.DataFrame(list(zip(test_uid, test_mid)), columns=['uid', 'sid'])
 # train = pd.read_csv(os.path.join('/share/DEEPLEARNING/datasets/graph_datasets/yelp2018_vae/trans', 'train.csv'))
 # test = pd.read_csv(os.path.join('/share/DEEPLEARNING/datasets/graph_datasets/yelp2018_vae/trans', 'test.csv'))
 
+DATASET = 'amazon_book_trans'
+REMOVE_USERS = True
+REMOVE_TEST_ITEMS = True
+train = pd.read_csv(os.path.join('splits/amazon-book/files_split/transductive', 'train.csv'))
+test = pd.read_csv(os.path.join('splits/amazon-book/files_split/transductive', 'test.csv'))
+
 val_struct = train.copy()
 test_struct = train.copy()
 val_pred = test.copy()
 test_pred = test.copy()
 
-users_train = sorted(train['uid'].unique().tolist())
-users_val = sorted(val_struct['uid'].unique().tolist())
-users_test = sorted(test_struct['uid'].unique().tolist())
-n_users = len(users_train) + len(users_val) + len(users_test)
-new_users_train = {x: new_x for new_x, x in enumerate(users_train)}
-new_users_val = {x: new_x for new_x, x in enumerate(users_val, start=len(users_train))}
-new_users_test = {x: new_x for new_x, x in enumerate(users_test, start=len(users_train)+len(users_val))}
-assert len(new_users_train) == len(users_train)
-assert len(new_users_val) == len(users_val)
-assert len(new_users_test) == len(users_test)
-train['uid'] = train['uid'].map(new_users_train)
-val_struct['uid'] = val_struct['uid'].map(new_users_val)
-val_pred['uid'] = val_pred['uid'].map(new_users_val)
-test_struct['uid'] = test_struct['uid'].map(new_users_test)
-test_pred['uid'] = test_pred['uid'].map(new_users_test)
+if REMOVE_USERS:
+    users_to_remove = set(train['uid'].unique().tolist()) - set(test['uid'].unique().tolist())
+    train = train[~train['uid'].isin(users_to_remove)]
+    val_struct = val_struct[~val_struct['uid'].isin(users_to_remove)]
+    test_struct = test_struct[~test_struct['uid'].isin(users_to_remove)]
+
+if REMOVE_TEST_ITEMS:
+    items_to_remove = set(test['sid'].unique().tolist()) - set(train['sid'].unique().tolist())
+    test = test[~test['sid'].isin(items_to_remove)]
+    val_pred = val_pred[~val_pred['sid'].isin(items_to_remove)]
+    test_pred = test_pred[~test_pred['sid'].isin(items_to_remove)]
+
+users = sorted(train['uid'].unique().tolist())
+items = sorted(train['sid'].unique().tolist())
+assert set(users) == set(test_pred['uid'].unique().tolist())
+# users_val = sorted(val_struct['uid'].unique().tolist())
+# users_test = sorted(test_struct['uid'].unique().tolist())
+# n_users = len(users_train) + len(users_val) + len(users_test)
+new_users = {x: new_x for new_x, x in enumerate(users)}
+new_items = {x: new_x for new_x, x in enumerate(items)}
+# new_users_val = {x: new_x for new_x, x in enumerate(users_val, start=len(users_train))}
+# new_users_test = {x: new_x for new_x, x in enumerate(users_test, start=len(users_train)+len(users_val))}
+# assert len(new_users_train) == len(users_train)
+# assert len(new_users_train) == len(users_val)
+# assert len(new_users_train) == len(users_test)
+train['uid'] = train['uid'].map(new_users)
+val_struct['uid'] = val_struct['uid'].map(new_users)
+val_pred['uid'] = val_pred['uid'].map(new_users)
+test_struct['uid'] = test_struct['uid'].map(new_users)
+test_pred['uid'] = test_pred['uid'].map(new_users)
+
+train['sid'] = train['sid'].map(new_items)
+val_struct['sid'] = val_struct['sid'].map(new_items)
+val_pred['sid'] = val_pred['sid'].map(new_items)
+test_struct['sid'] = test_struct['sid'].map(new_items)
+test_pred['sid'] = test_pred['sid'].map(new_items)
+
 
 train.to_csv(os.path.join('splits/', 'train_reindex.csv'))
 val_struct.to_csv(os.path.join('splits/', 'validation_tr_reindex.csv'))

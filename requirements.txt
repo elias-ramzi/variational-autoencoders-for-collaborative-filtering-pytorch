@@ -8,10 +8,6 @@ pandas
 scikit-learn
 tqdm
 tensorboard
-timm @ git+https://github.com/rwightman/pytorch-image-models
-pytorch-metric-learning
-hydra-core==1.1
-hydra_colorlog==1.1.0
 
 # utils
 matplotlib

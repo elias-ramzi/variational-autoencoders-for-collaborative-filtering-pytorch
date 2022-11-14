@@ -21,16 +21,23 @@ import pickle
 # test_pred = pd.read_csv(os.path.join('/share/DEEPLEARNING/datasets/graph_datasets/gowalla_vae/', 'test_te.csv'))
 
 
-DATASET = 'yelp2018'
-train = pd.read_csv(os.path.join('/share/DEEPLEARNING/datasets/graph_datasets/yelp2018_vae/', 'train.csv'))
-val_struct = pd.read_csv(os.path.join('/share/DEEPLEARNING/datasets/graph_datasets/yelp2018_vae/', 'validation_tr.csv'))
-val_pred = pd.read_csv(os.path.join('/share/DEEPLEARNING/datasets/graph_datasets/yelp2018_vae/', 'validation_te.csv'))
-test_struct = pd.read_csv(os.path.join('/share/DEEPLEARNING/datasets/graph_datasets/yelp2018_vae/', 'test_tr.csv'))
-test_pred = pd.read_csv(os.path.join('/share/DEEPLEARNING/datasets/graph_datasets/yelp2018_vae/', 'test_te.csv'))
+# DATASET = 'yelp2018'
+# train = pd.read_csv(os.path.join('/share/DEEPLEARNING/datasets/graph_datasets/yelp2018_vae/', 'train.csv'))
+# val_struct = pd.read_csv(os.path.join('/share/DEEPLEARNING/datasets/graph_datasets/yelp2018_vae/', 'validation_tr.csv'))
+# val_pred = pd.read_csv(os.path.join('/share/DEEPLEARNING/datasets/graph_datasets/yelp2018_vae/', 'validation_te.csv'))
+# test_struct = pd.read_csv(os.path.join('/share/DEEPLEARNING/datasets/graph_datasets/yelp2018_vae/', 'test_tr.csv'))
+# test_pred = pd.read_csv(os.path.join('/share/DEEPLEARNING/datasets/graph_datasets/yelp2018_vae/', 'test_te.csv'))
+
+
+DATASET = 'amazon_book'
+train = pd.read_csv(os.path.join('splits/amazon-book/files_split/inductive', 'train.csv'))
+val_struct = pd.read_csv(os.path.join('splits/amazon-book/files_split/inductive', 'validation_tr.csv'))
+val_pred = pd.read_csv(os.path.join('splits/amazon-book/files_split/inductive', 'validation_te.csv'))
+test_struct = pd.read_csv(os.path.join('splits/amazon-book/files_split/inductive', 'test_tr.csv'))
+test_pred = pd.read_csv(os.path.join('splits/amazon-book/files_split/inductive', 'test_te.csv'))
 
 
 users_train = sorted(train['uid'].unique().tolist())
-print(len(users_train))
 users_val = sorted(val_struct['uid'].unique().tolist())
 users_test = sorted(test_struct['uid'].unique().tolist())
 n_users = len(users_train) + len(users_val) + len(users_test)
