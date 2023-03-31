@@ -37,6 +37,14 @@ test_struct = pd.read_csv(os.path.join('splits/amazon-book/files_split/inductive
 test_pred = pd.read_csv(os.path.join('splits/amazon-book/files_split/inductive', 'test_te.csv'))
 
 
+DATASET = 'ml_1m_ind'
+train = pd.read_csv(os.path.join('splits/amazon-book/files_split/inductive', 'train.csv'))
+val_struct = pd.read_csv(os.path.join('splits/amazon-book/files_split/inductive', 'validation_tr.csv'))
+val_pred = pd.read_csv(os.path.join('splits/amazon-book/files_split/inductive', 'validation_te.csv'))
+test_struct = pd.read_csv(os.path.join('splits/amazon-book/files_split/inductive', 'test_tr.csv'))
+test_pred = pd.read_csv(os.path.join('splits/amazon-book/files_split/inductive', 'test_te.csv'))
+
+
 users_train = sorted(train['uid'].unique().tolist())
 users_val = sorted(val_struct['uid'].unique().tolist())
 users_test = sorted(test_struct['uid'].unique().tolist())

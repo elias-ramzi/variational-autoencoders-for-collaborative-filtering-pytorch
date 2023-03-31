@@ -13,3 +13,5 @@ python demo.py train --dataset_name amazon-book --processed_dir amazon_book_tran
 
 
 python demo.py train --dataset_name amazon-book --processed_dir amazon_book/ --n_items 91599 --train_batch_size 512 --arch_type MultiVAE --runs 1 --gpu 1 > output/ind_amazon_mult_vae.out
+
+python demo.py train --dataset_name ml_1m --processed_dir ml_1m/ --n_items 91599 --train_batch_size 512 --arch_type MultiVAE --runs 1 --gpu 1 > output/ind_ml1m_mult_vae.out

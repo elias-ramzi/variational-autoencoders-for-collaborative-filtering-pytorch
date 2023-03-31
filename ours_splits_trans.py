@@ -42,11 +42,20 @@ import pickle
 # train = pd.read_csv(os.path.join('/share/DEEPLEARNING/datasets/graph_datasets/yelp2018_vae/trans', 'train.csv'))
 # test = pd.read_csv(os.path.join('/share/DEEPLEARNING/datasets/graph_datasets/yelp2018_vae/trans', 'test.csv'))
 
-DATASET = 'amazon_book_trans'
+# DATASET = 'amazon_book_trans'
+# REMOVE_USERS = True
+# REMOVE_TEST_ITEMS = True
+# train = pd.read_csv(os.path.join('splits/amazon-book/files_split/transductive', 'train.csv'))
+# test = pd.read_csv(os.path.join('splits/amazon-book/files_split/transductive', 'test.csv'))
+
+DATASET = 'ml_1m_trans'
 REMOVE_USERS = True
 REMOVE_TEST_ITEMS = True
-train = pd.read_csv(os.path.join('splits/amazon-book/files_split/transductive', 'train.csv'))
-test = pd.read_csv(os.path.join('splits/amazon-book/files_split/transductive', 'test.csv'))
+train = pd.read_csv(os.path.join('splits/ml_1m/files_split/transductive', 'train.csv'))
+test = pd.read_csv(os.path.join('splits/ml_1m/files_split/transductive', 'test.csv'))
+
+os.makedirs(DATASET, exist_ok=True)
+
 
 val_struct = train.copy()
 test_struct = train.copy()

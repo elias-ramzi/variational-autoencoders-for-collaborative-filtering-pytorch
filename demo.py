@@ -32,7 +32,7 @@ def main():
     parser.add_argument('cmd', type=str, choices=['train'], help='train')
     parser.add_argument('--runs', type=int, default=1, help='number of runs')
     parser.add_argument('--arch_type', type=str, default='MultiVAE', help='architecture', choices=['MultiVAE', 'MultiDAE'])
-    parser.add_argument('--dataset_name', type=str, default='ml-20m', help='camera model type', choices=['ml-20m', 'lastfm-360k', 'ml-100k', 'ml-latest-small', 'amazon-book'])
+    parser.add_argument('--dataset_name', type=str, default='ml-20m', help='camera model type', choices=['ml-20m', 'lastfm-360k', 'ml-100k', 'ml-latest-small', 'amazon-book', 'ml_1m'])
     parser.add_argument('--processed_dir', type=str, default='ml-20m/', help='dataset directory')
     parser.add_argument('--n_items', type=int, default=20108, help='n items')
     parser.add_argument('--conditioned_on', type=str, default=None, help='conditioned on user profile (g: gender, a: age, c: country) for Last.fm')
@@ -86,7 +86,7 @@ def main():
         kwargs = {'num_workers': args.workers, 'pin_memory': True} if cuda else {}
         root = args.processed_dir
 
-        if args.dataset_name in ['ml-20m', 'ml-100k', 'ml-latest-small', 'amazon-book']:
+        if args.dataset_name in ['ml-20m', 'ml-100k', 'ml-latest-small', 'amazon-book', 'ml_1m']:
             DS = dataset.MovieLensDataset
         else:
             DS = dataset.LastfmDataset
